@@ -55,7 +55,10 @@ Route::post('/login', function (Request $request) {
 		return response()->json(
 			array_merge(
 				baseResponse(200, 'Login sucessfully'),
-				['api_token' => $guard->user()->api_token]
+				[
+					'api_token' => $guard->user()->api_token,
+					'current_user' => $guard->user(),
+				]
 			)
 		);
 	} else
@@ -156,8 +159,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 
 	Route::post('/storePlaceByUser', function (Request $request) {
 		$validator = getValidator($request, [
-			'lat' => 'required|numeric|min:1|max:200',
-			'lng' => 'required|numeric|min:1|max:200',
+			'lat' => 'required',
+			'lng' => 'required',
 			'user_id' => 'required|integer',
 		]);
 
@@ -230,30 +233,96 @@ Route::group(['middleware' => 'auth:api'], function () {
 	});
 
 	Route::get('/getNewListByPlace', function (Request $request) {
-		$validator = getValidator($request, [
-			'type' => 'required|string',
-		]);
+		$newsByCity = \App\News::whereIn('place_id', function($query){
+			$query->from('places')
+                    ->select('place_id')
+                    ->where('type', 'city');
+		})->get();
+		$newsByCounty = \App\News::whereIn('place_id', function($query){
+			$query->from('places')
+                    ->select('place_id')
+                    ->where('type', 'county');
+		})->get();
 
-		if ($validator->fails()) 
-		{
-			return response()->json(baseResponse(401, 'id must be a integer and required'));
-		}
+		$newsByGuild = \App\News::whereIn('place_id', function($query){
+			$query->from('places')
+                    ->select('place_id')
+                    ->where('type', 'guild');
+		})->get();
 
-		$places = Places::where('type', $request->get('type'))->get();
-		$news = [];
-		foreach ($places as $place) {
-			array_push($news, $place->place_id);
-		}
-
-		$news = News::whereIn('id', $news)->get();
-
-		return response()->json(
-			array_merge(
-				baseResponse(200, (!is_null($news) || !$news->isEmpty()) ? 'get a news list informations by places successfully' : 'empty news'),
-				['new_data' => $news]
-			)
-		); 
+		return response()->json(array_merge(
+			baseResponse(200, 'get list successfully'),
+			compact('newsByCity', 'newsByCounty', 'newsByGuild')
+		));
 	});
+
+	Route::post('/checkReaded' , function(Request $request) {
+		$message = 'To readed this new is noted!!';
+		if ($request->has('new_id') && $request->has('user_id'))
+		{
+			\App\CheckReaded::updateOrCreate(
+				$request->except('api_token'),
+				['is_readed' => true]
+			);
+		}
+		else
+		{
+			$message = 'For note to readed this new is failed!!';
+		}
+		
+		return response()->json([
+			'message' => $message,
+			'statusCode' => 200,
+		]);
+	});
+
+	Route::get('/getTotalNewsNotReaded', function (Request $request){
+		$userId = $request->get('user_id');
+		if (empty($userId))
+		{
+			return response()->json([
+				'message' => 'userId is required, missing user id to get total news are not readed',
+				'statusCode' => 200,
+			]);
+		}
+
+		$total = \App\News::whereNotIn('id', function($query) use ($userId){
+			$query->from('check_readed')
+                    ->select('new_id')
+                    ->where('user_id', $userId)
+                    ->where('is_readed', true)
+                    ;
+		})->count();
+
+		return response()->json([
+			'statusCode' => 200,
+			'total' => $total ?? 0,
+		]);
+	});
+
+	Route::get('/getNewsListNotReaded', function (Request $request){
+		$userId = $request->get('user_id');
+		if (empty($userId))
+		{
+			return response()->json([
+				'message' => 'userId is required, missing user id to get total news are not readed',
+				'statusCode' => 200,
+			]);
+		}
+
+		$newsList = \App\News::whereNotIn('id', function($query) use ($userId){
+			$query->from('check_readed')
+                    ->select('new_id')
+                    ->where('user_id', $userId)
+                    ->where('is_readed', true)
+                    ;
+		})->get();
+
+		return response()->json([
+			'statusCode' => 200,
+			'newsList' => $newsList,
+		]);
+	});
+
+
 });
-
-
