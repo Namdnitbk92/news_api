@@ -231,33 +231,31 @@ Route::group(['middleware' => 'auth:api'], function () {
 			)
 		); 
 	});
-
+// , 'city.name', 'check_readed.is_readed',
 	Route::get('/getNewListByPlace', function (Request $request) {
-		$newsByCity = \App\News::whereIn('place_id', function($query){
-			$query->from('places')
-                    ->select('place_id')
-                    ->where('type', 'city');
-		})->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
-		->select('news.*', 'check_readed.is_readed')
-		->get();
+		$newsByCity = DB::table('news')
+		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
+		    ->where('places.type', '=', 'city')
+		    ->select('news.*',  'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->get();
 
-		$newsByCounty = \App\News::whereIn('place_id', function($query){
-			$query->from('places')
-                    ->select('place_id')
-                    ->where('type', 'county');
-		})
-		->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
-		->select('news.*', 'check_readed.is_readed')
-		->get();
+		$newsByCounty = DB::table('news')
+		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
+		    ->where('places.type', '=', 'county')
+		    ->select('news.*',  'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
+		    ->get();
 
-		$newsByGuild = \App\News::whereIn('place_id', function($query){
-			$query->from('places')
-                    ->select('place_id')
-                    ->where('type', 'guild');
-		})
-		->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
-		->select('news.*', 'check_readed.is_readed')
-		->get();
+		$newsByGuild = DB::table('news')
+		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('guild', 'places.original_place_id', '=', 'guild.id')
+		    ->where('places.type', '=', 'guild')
+		    ->select('news.*',  'places.original_place_id', 'guild.name as place_name', 'check_readed.is_readed')
+		    ->get();
 
 		return response()->json(array_merge(
 			baseResponse(200, 'get list successfully'),
