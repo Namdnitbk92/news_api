@@ -51,6 +51,7 @@ Route::post('/login', function (Request $request) {
 	if ($isLogged)
 	{
 		session()->regenerate();
+		session()->put('currentUser', $guard->user());
 
 		return response()->json(
 			array_merge(
@@ -233,29 +234,74 @@ Route::group(['middleware' => 'auth:api'], function () {
 	});
 // , 'city.name', 'check_readed.is_readed',
 	Route::get('/getNewListByPlace', function (Request $request) {
-		$newsByCity = DB::table('news')
-		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		$user = \Auth::guard('api')->user();
+		$type = $user->belong_to_place;
+		$original_place_id = $user->original_place_id;
+
+		if ($type === 'city')
+		{
+			$newsByCity = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
+		    ->where('places.type', '=', $type)
+		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->get();
+
+		    $newsByCounty = [];
+		    $newsByGuild = [];
+		}
+		else if ($type === 'county')
+		{
+			$newsByCity = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
 		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
-		    ->select('news.*',  'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->get(); 
+
+			$newsByCounty = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
+		    ->where('places.type', '=', $type)
+		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
-		$newsByCounty = DB::table('news')
-		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		    $newsByGuild = [];
+		} 
+		else if($type === 'guild')
+		{
+			$guild = DB::table('guild')->where('id', $original_place_id)->first();
+			$newsByCity = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
+		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
+		    ->where('places.type', '=', 'city')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->get();
+
+			$newsByCounty = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
 		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
 		    ->where('places.type', '=', 'county')
-		    ->select('news.*',  'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
+		    ->where('places.original_place_id', '=', $guild->county_id)
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
-		$newsByGuild = DB::table('news')
-		    ->leftJoin('places', 'news.place_id', '=', 'places.place_id')
+		    $newsByGuild = DB::table('news')
+		    ->join('places', 'news.place_id', '=', 'places.place_id')
 		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('guild', 'places.original_place_id', '=', 'guild.id')
-		    ->where('places.type', '=', 'guild')
-		    ->select('news.*',  'places.original_place_id', 'guild.name as place_name', 'check_readed.is_readed')
+		    ->where('places.type', '=', $type)
+		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'guild.name as place_name', 'check_readed.is_readed')
 		    ->get();
+		}
 
 		return response()->json(array_merge(
 			baseResponse(200, 'get list successfully'),
