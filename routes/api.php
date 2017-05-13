@@ -246,6 +246,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
@@ -259,6 +261,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
 		    ->get(); 
 
@@ -268,6 +272,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
@@ -281,6 +287,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
@@ -290,6 +298,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
 		    ->where('places.type', '=', 'county')
 		    ->where('places.original_place_id', '=', $guild->county_id)
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
 		    ->get();
 
@@ -299,6 +309,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('guild', 'places.original_place_id', '=', 'guild.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
+		    ->where('news.status_id', '=', 3)
+		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'guild.name as place_name', 'check_readed.is_readed')
 		    ->get();
 		}
