@@ -428,7 +428,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		$message = 'To readed this new is noted!!';
 		if ($request->has('new_id') && $request->has('user_id'))
 		{
-			$data = ['new_id' => $request->get('new_id'), 'user_id' => $request->get('user_id')]
+			$data = ['new_id' => $request->get('new_id'), 'user_id' => $request->get('user_id')];
 			$read = \App\CheckReaded::where($data)->first();
 			if (!empty($read))
 			{
