@@ -52,13 +52,14 @@ Route::post('/login', function (Request $request) {
 	{
 		session()->regenerate();
 		session()->put('currentUser', $guard->user());
-
+		$place_detail = $guard->user()->getAddressByUser();
 		return response()->json(
 			array_merge(
 				baseResponse(200, 'Login sucessfully'),
 				[
 					'api_token' => $guard->user()->api_token,
 					'current_user' => $guard->user(),
+					'place_detail' => $place_detail,
 				]
 			)
 		);
@@ -242,14 +243,31 @@ Route::group(['middleware' => 'auth:api'], function () {
 		{
 			$newsByCity = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get();
+
+		    $temp = [];
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByCity = $temp;
 
 		    $newsByCounty = [];
 		    $newsByGuild = [];
@@ -258,24 +276,58 @@ Route::group(['middleware' => 'auth:api'], function () {
 		{
 			$newsByCity = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get(); 
+
+		    $temp = [];
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByCity = $temp;
 
 			$newsByCounty = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name')
 		    ->get();
+
+		    $temp = [];
+		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByCounty = $temp;
 
 		    $newsByGuild = [];
 		} 
@@ -284,35 +336,86 @@ Route::group(['middleware' => 'auth:api'], function () {
 			$guild = DB::table('guild')->where('id', $original_place_id)->first();
 			$newsByCity = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get();
+
+		    $temp = [];
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByCity = $temp;
 
 			$newsByCounty = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('county', 'places.original_place_id', '=', 'county.id')
 		    ->where('places.type', '=', 'county')
 		    ->where('places.original_place_id', '=', $guild->county_id)
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name')
 		    ->get();
+
+		    $temp = [];
+		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByCounty = $temp;
 
 		    $newsByGuild = DB::table('news')
 		    ->join('places', 'news.place_id', '=', 'places.place_id')
-		    ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
+		    // ->leftJoin('check_readed', 'news.id', '=', 'check_readed.new_id')
 		    ->leftJoin('guild', 'places.original_place_id', '=', 'guild.id')
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
 		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
-		    ->select('news.*',  'places.type', 'places.original_place_id', 'guild.name as place_name', 'check_readed.is_readed')
+		    ->select('news.*',  'places.type', 'places.original_place_id', 'guild.name as place_name')
 		    ->get();
+
+		    $temp = [];
+		    $newsByGuild = $newsByGuild->each(function ($value, $key) use (&$temp, $user){
+		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
+		    	$read = \App\CheckReaded::where($conds)->first();
+		    	if (!empty($read))
+		    	{
+		    		$value->is_readed = 1;
+		    	}
+		    	else
+		    	{
+		    		$value->is_readed = 0;
+		    	}	
+
+		    	$temp[] = $value;
+			});
+		    $newsByGuild = $temp;
 		}
 
 		return response()->json(array_merge(
@@ -325,10 +428,16 @@ Route::group(['middleware' => 'auth:api'], function () {
 		$message = 'To readed this new is noted!!';
 		if ($request->has('new_id') && $request->has('user_id'))
 		{
-			\App\CheckReaded::updateOrCreate(
-				$request->except('api_token'),
-				['is_readed' => true]
-			);
+			$data = ['new_id' => $request->get('new_id'), 'user_id' => $request->get('user_id')]
+			$read = \App\CheckReaded::where($data)->first();
+			if (!empty($read))
+			{
+				$read->update(array_merge($data, ['is_readed' => true]));
+			}
+			else
+			{
+				\App\CheckReaded::create(array_merge($data, ['is_readed' => true]));
+			}
 		}
 		else
 		{
