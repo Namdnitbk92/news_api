@@ -238,7 +238,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		$user = \Auth::guard('api')->user();
 		$type = $user->belong_to_place;
 		$original_place_id = $user->original_place_id;
-
+		$total = 0;
 		if ($type === 'city')
 		{
 			$newsByCity = DB::table('news')
@@ -253,7 +253,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get();
 
 		    $temp = [];
-		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -263,6 +263,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -285,7 +286,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get(); 
 
 		    $temp = [];
-		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -295,6 +296,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -313,7 +315,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get();
 
 		    $temp = [];
-		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$temp, $user){
+		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -323,6 +325,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -345,7 +348,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get();
 
 		    $temp = [];
-		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$temp, $user){
+		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -355,6 +358,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -373,7 +377,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get();
 
 		    $temp = [];
-		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$temp, $user){
+		    $newsByCounty = $newsByCounty->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -383,6 +387,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -401,7 +406,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->get();
 
 		    $temp = [];
-		    $newsByGuild = $newsByGuild->each(function ($value, $key) use (&$temp, $user){
+		    $newsByGuild = $newsByGuild->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
 		    	$read = \App\CheckReaded::where($conds)->first();
 		    	if (!empty($read))
@@ -411,6 +416,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    	else
 		    	{
 		    		$value->is_readed = 0;
+		    		$total++;
 		    	}	
 
 		    	$temp[] = $value;
@@ -420,7 +426,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 
 		return response()->json(array_merge(
 			baseResponse(200, 'get list successfully'),
-			compact('newsByCity', 'newsByCounty', 'newsByGuild')
+			compact('newsByCity', 'newsByCounty', 'newsByGuild', 'total')
 		));
 	});
 
@@ -451,22 +457,26 @@ Route::group(['middleware' => 'auth:api'], function () {
 	});
 
 	Route::get('/getTotalNewsNotReaded', function (Request $request){
-		$userId = $request->get('user_id');
-		if (empty($userId))
-		{
-			return response()->json([
-				'message' => 'userId is required, missing user id to get total news are not readed',
-				'statusCode' => 200,
-			]);
-		}
+		$user = \Auth::guard('api')->user();
+		$userId = $user->id;
+		$type = $user->belong_to_place;
+		$original_place_id = $user->original_place_id;
 
-		$total = \App\News::whereNotIn('id', function($query) use ($userId){
-			$query->from('check_readed')
-                    ->select('new_id')
-                    ->where('user_id', $userId)
-                    ->where('is_readed', true)
-                    ;
-		})->count();
+
+		$total = DB::table('news')
+				->join('places', 'news.place_id', '=', 'places.place_id')
+				->where('places.type', '=', $type)
+			    ->where('places.original_place_id', '=', $original_place_id)
+			    ->where('news.status_id', '=', 3)
+			    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+				->whereNotIn('id', function($query) use ($userId){
+					$query->from('check_readed')
+		                    ->select('new_id')
+		                    ->where('user_id', $userId)
+		                    ->where('is_readed', true)
+		                    ;
+				})
+				->count();
 
 		return response()->json([
 			'statusCode' => 200,
