@@ -248,7 +248,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get();
 
@@ -281,10 +281,10 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get(); 
-
+		    // dd($newsByCity);
 		    $temp = [];
 		    $newsByCity = $newsByCity->each(function ($value, $key) use (&$total, &$temp, $user){
 		    	$conds = ['new_id'=> $value->id, 'user_id' => $user->id, 'is_readed' => true];
@@ -310,7 +310,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name')
 		    ->get();
 
@@ -343,7 +343,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->leftJoin('city', 'places.original_place_id', '=', 'city.id')
 		    ->where('places.type', '=', 'city')
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'city.name as place_name')
 		    ->get();
 
@@ -372,7 +372,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->where('places.type', '=', 'county')
 		    ->where('places.original_place_id', '=', $guild->county_id)
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'county.name as place_name')
 		    ->get();
 
@@ -401,7 +401,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 		    ->where('places.type', '=', $type)
 		    ->where('places.original_place_id', '=', $original_place_id)
 		    ->where('news.status_id', '=', 3)
-		    ->where('news.publish_time', '<=', \Carbon\Carbon::now())
+		    ->where('news.publish_time', '>=', \Carbon\Carbon::now())
 		    ->select('news.*',  'places.type', 'places.original_place_id', 'guild.name as place_name')
 		    ->get();
 
